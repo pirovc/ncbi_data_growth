@@ -16,8 +16,8 @@ def get_file(file,local=False):
 		text = data.decode('utf-8')
 	return text
 
-def parse_genbank_wgs(genbank_wgs_file, local=False):
-	text = get_file(genbank_wgs_file, local)
+def parse_genbank_wgs(gbrel_file, local=False):
+	text = get_file(gbrel_file, local)
 
 	# GenBank
 	# start/end anchor
@@ -42,10 +42,11 @@ def parse_genbank_wgs(genbank_wgs_file, local=False):
 
 	genbank = pd.DataFrame(genbank_entries, columns=["Release","Month","Year","Base Pairs","Entries"]).dropna()
 	genbank['Month'] = genbank['Month'].apply(lambda x: '{0:0>2}'.format(month_nr[x]))
-	cols = ["Year","Base Pairs","Entries"]
+	cols = ["Month","Year","Base Pairs","Entries"]
 	genbank[cols] = genbank[cols].apply(pd.to_numeric, errors='ignore', axis=1)
 	genbank["Day"] = '{0:0>2}'.format(1)
-
+	genbank["Date"] = pd.to_datetime(genbank[["Year","Month","Day"]], dayfirst=True)
+	genbank.set_index("Date", inplace=True)
 
 	# WGS
 	# start/end anchor
@@ -63,19 +64,17 @@ def parse_genbank_wgs(genbank_wgs_file, local=False):
 	wgs_entries = [line.strip().split()[:5] for line in match.group(0).split("\n") if line][:-1]
 	
 	wgs = pd.DataFrame(wgs_entries, columns=["Release","Month","Year","Base Pairs","Entries"]).dropna()
-	wgs['Month'] = wgs['Month'].apply(lambda x: '{0:0>2}'.format(month_nr[x]))
-	cols = ["Year","Base Pairs","Entries"]
+	wgs['Month'] = wgs['Month'].apply(lambda x: month_nr[x])
+	cols = ["Month","Year","Base Pairs","Entries"]
 	wgs[cols] = wgs[cols].apply(pd.to_numeric, errors='ignore', axis=1)
-	wgs["Day"] = '{0:0>2}'.format(1)
-
+	wgs["Day"] = 1
+	wgs["Date"] = pd.to_datetime(wgs[["Year","Month","Day"]], dayfirst=True)
+	wgs.set_index("Date", inplace=True)
 	return genbank, wgs
 
+def parse_refseq_release(refseq_release_file, local=False):
 
-
-def parse_refseq(refseq_file, local=False):
-
-	text = get_file(refseq_file,local)
-
+	text_release = get_file(refseq_release_file, local)
 	# RefSeq
 	# start/end anchor
 	#3.9 Growth of RefSeq	
@@ -86,32 +85,86 @@ def parse_refseq(refseq_file, local=False):
 	#99	Mar 2, 2020	99842	1865535232080	 64046042055	 231402293
 	#
 	#Note: Date refers to the data cut-off date, i.e., the release incorporates 
-	match = re.search('1[\t]+Jun 30.*?Note', text, re.DOTALL)
-	refseq_entries = [line.strip().split()[:8] for line in match.group(0).split("\n") if line][:-1]
+	match = re.search('1[\t]+Jun 30.*?Note', text_release, re.DOTALL)
+	refseq_release_entries = [line.strip().split()[:8] for line in match.group(0).split("\n") if line][:-1]
 	#Nucleotides=Base Pairs
 	#Records=Entries
-	refseq = pd.DataFrame(refseq_entries, columns=["Release","Month","Day","Year","Taxons","Base Pairs","Amino Acids","Entries"]).dropna()
+	refseq = pd.DataFrame(refseq_release_entries, columns=["Release","Month","Day","Year","Taxons","Base Pairs","Amino Acids","Entries"]).dropna()
 	refseq["Day"] = refseq["Day"].apply(lambda x: x.rstrip(','))
-	refseq['Month'] = refseq['Month'].apply(lambda x: '{0:0>2}'.format(month_nr[x]))
-	cols = ["Day","Year","Taxons","Base Pairs","Amino Acids","Entries"]
+	refseq['Month'] = refseq['Month'].apply(lambda x: month_nr[x])
+	cols = ["Month","Day","Year","Taxons","Base Pairs","Amino Acids","Entries"]
 	refseq[cols] = refseq[cols].apply(pd.to_numeric, errors='ignore', axis=1)
-	refseq["Day"] = refseq["Day"].apply(lambda x: '{0:0>2}'.format(x))
+	refseq["Date"] = pd.to_datetime(refseq[["Year","Month","Day"]], dayfirst=True)
+	refseq.set_index("Date", inplace=True)
 	return refseq
 
-#genbank_wgs_file="https://ftp.ncbi.nlm.nih.gov/genbank/gbrel.txt"
-genbank_wgs_file = "gbrel.txt"
-#refseq_release_nr = get_file("https://ftp.ncbi.nlm.nih.gov/refseq/release/RELEASE_NUMBER").rstrip()
-#refseq_file="https://ftp.ncbi.nlm.nih.gov/refseq/release/release-notes/RefSeq-release" + refseq_release_nr + ".txt"
-refseq_file="RefSeq-release99.txt"
+def parse_refseq_growth(refseq_acc_taxid_growth_file, local=False):
+	text_growth = get_file(refseq_acc_taxid_growth_file, local)
+	refseq_growth_entries = [line.strip().split()[:9] for line in text_growth.split("\n") if line][1:]
+	refseq = pd.DataFrame(refseq_growth_entries, columns=["Release","Month","Day","Year","Species","Total_accessions", "Nucleotides", "Transcripts", "Proteins"]).dropna()
+	refseq.drop(['Month', 'Day', "Year"], axis=1, inplace=True)
+	cols = ["Species", "Total_accessions", "Nucleotides", "Transcripts", "Proteins"]
+	refseq[cols] = refseq[cols].apply(pd.to_numeric, errors='ignore', axis=1)
+	refseq.set_index("Release", inplace=True)
+	return refseq
 
-genbank, wgs = parse_genbank_wgs(genbank_wgs_file, local=True)
-refseq = parse_refseq(refseq_file, local=True)
+refseq_org_group = ["archaea", "bacteria", "fungi", "invertebrate", "mitochondrion", "other", "plant", "plasmid", "plastid", "protozoa", "vertebrate_mammalian", "vertebrate_other", "viral"]
+local = True
+if local:
+	gbrel_file = "sample_files/gbrel.txt"
+	genbank, wgs = parse_genbank_wgs(gbrel_file, local=True)
 
-print(genbank)
-print(wgs)
-print(refseq)
+	refseq_release_file="sample_files/RefSeq-release99.txt"
+	refseq = parse_refseq_release(refseq_release_file, local=True)
+	refseq_acc_taxid_growth_complete_file="sample_files/complete.acc_taxid_growth.txt"
+	refseq_growth_complete = parse_refseq_growth(refseq_acc_taxid_growth_complete_file, local=True)
 
-fig1, ax1 = plt.subplots()
-ax1.plot(refseq["Year"], refseq["Base Pairs"])
-ax1.plot(wgs["Year"], wgs["Base Pairs"])
+	refseq = refseq.join(refseq_growth_complete, on='Release')
+
+	for org in refseq_org_group:
+		refseq_acc_taxid_growth_org_file="sample_files/"+org+".acc_taxid_growth.txt"
+		refseq_growth_org = parse_refseq_growth(refseq_acc_taxid_growth_org_file, local=True)
+		refseq = refseq.join(refseq_growth_org, on='Release', rsuffix='_'+org)
+
+else:
+	gbrel_file="https://ftp.ncbi.nlm.nih.gov/genbank/gbrel.txt"
+	genbank, wgs = parse_genbank_wgs(gbrel_file)
+	
+	refseq_lates_release_nr = get_file("https://ftp.ncbi.nlm.nih.gov/refseq/release/RELEASE_NUMBER").rstrip()
+	print("Parsing RefSeq release " + refseq_lates_release_nr)
+	refseq_release_file="https://ftp.ncbi.nlm.nih.gov/refseq/release/release-notes/RefSeq-release" + refseq_lates_release_nr + ".txt"
+	refseq = parse_refseq_release(refseq_release_file, refseq_acc_taxid_growth_complete_file)
+	refseq_acc_taxid_growth_complete_file="https://ftp.ncbi.nlm.nih.gov/refseq/release/release-statistics/complete.acc_taxid_growth.txt"
+	refseq_growth_complete = parse_refseq_growth(refseq_acc_taxid_growth_complete_file)
+
+	refseq = refseq.join(refseq_growth_complete, on='Release')
+	for org in refseq_org_group:
+		refseq_acc_taxid_growth_org_file="https://ftp.ncbi.nlm.nih.gov/refseq/release/release-statistics/"+org+".acc_taxid_growth.txt"
+		refseq_growth_org = parse_refseq_growth(refseq_acc_taxid_growth_org_file)
+		refseq = refseq.join(refseq_growth_org, on='Release', rsuffix='_'+org)
+
+
+#print(genbank)
+#print(wgs)
+#print(refseq)
+
+
+### species growth organisms
+dates = pd.date_range(start='2010-01-01', end='2021-01-01', freq='D')
+v="Species"
+sub_refseq = refseq.filter(regex=v).loc[dates].dropna()
+sub_refseq.plot(logy=True)
 plt.show()
+
+
+### comparison wgs, refseq, genbank
+#dates = pd.date_range(start='2000-01-01', end='2020-01-01', freq='D')
+#fig1, ax1 = plt.subplots()
+#v="Base Pairs"
+#ax1.plot(refseq.loc[dates][v].dropna(), label="RefSeq")
+#ax1.plot(wgs.loc[dates][v].dropna(), label="WGS")
+#ax1.plot(genbank.loc[dates][v].dropna(), label="GenBank")
+#ax1.set_yscale('log')
+#ax1.legend()
+#plt.xticks(rotation=90)
+#plt.show()
