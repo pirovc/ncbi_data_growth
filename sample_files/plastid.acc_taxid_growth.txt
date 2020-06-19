@@ -99,3 +99,4 @@ Release  Date           Species  Total_accessions  Nucleotides  Transcripts  Pro
 97       Nov 04, 2019   4506     401437            4511         44           396882     
 98       Jan 06, 2020   4656     414114            4660         44           409410     
 99       Mar 02, 2020   4718     419413            4722         44           414647     
+200      May 04, 2020   5195     460709            5201         44           455464     

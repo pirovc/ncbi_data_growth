@@ -1,0 +1,15 @@
+https://ftp.ncbi.nlm.nih.gov/refseq/release/release-statistics/archaea.acc_taxid_growth.txt
+https://ftp.ncbi.nlm.nih.gov/refseq/release/release-statistics/bacteria.acc_taxid_growth.txt
+https://ftp.ncbi.nlm.nih.gov/refseq/release/release-statistics/fungi.acc_taxid_growth.txt
+https://ftp.ncbi.nlm.nih.gov/refseq/release/release-statistics/invertebrate.acc_taxid_growth.txt
+https://ftp.ncbi.nlm.nih.gov/refseq/release/release-statistics/mitochondrion.acc_taxid_growth.txt
+https://ftp.ncbi.nlm.nih.gov/refseq/release/release-statistics/other.acc_taxid_growth.txt
+https://ftp.ncbi.nlm.nih.gov/refseq/release/release-statistics/plant.acc_taxid_growth.txt
+https://ftp.ncbi.nlm.nih.gov/refseq/release/release-statistics/plasmid.acc_taxid_growth.txt
+https://ftp.ncbi.nlm.nih.gov/refseq/release/release-statistics/plastid.acc_taxid_growth.txt
+https://ftp.ncbi.nlm.nih.gov/refseq/release/release-statistics/protozoa.acc_taxid_growth.txt
+https://ftp.ncbi.nlm.nih.gov/refseq/release/release-statistics/vertebrate_mammalian.acc_taxid_growth.txt
+https://ftp.ncbi.nlm.nih.gov/refseq/release/release-statistics/vertebrate_other.acc_taxid_growth.txt
+https://ftp.ncbi.nlm.nih.gov/refseq/release/release-statistics/viral.acc_taxid_growth.txt
+https://ftp.ncbi.nlm.nih.gov/genbank/gbrel.txt
+https://ftp.ncbi.nlm.nih.gov/refseq/release/release-notes/RefSeq-release200.txt
